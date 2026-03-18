@@ -4,8 +4,9 @@
 <title>Job Portal</title>
 
 <style>
-body { font-family: Arial; text-align: center; }
-button { padding:8px; margin:5px; }
+body { font-family: Arial; text-align: center; background:#f2f2f2; }
+button { padding:8px 15px; margin:5px; }
+.card { background:white; margin:10px; padding:10px; border-radius:8px; }
 </style>
 
 </head>
@@ -13,6 +14,7 @@ button { padding:8px; margin:5px; }
 
 <h1>Job Portal</h1>
 
+<!-- LOGIN -->
 <div id="login">
 <h2>Login</h2>
 
@@ -26,34 +28,107 @@ button { padding:8px; margin:5px; }
 <button onclick="login()">Login</button>
 </div>
 
+<!-- STUDENT -->
 <div id="student" style="display:none;">
-<h2>Student Panel</h2>
-<p>Welcome Student 👨‍🎓</p>
+<h2>Jobs</h2>
+<div id="jobList"></div>
 <button onclick="logout()">Logout</button>
 </div>
 
+<!-- BUSINESS -->
 <div id="business" style="display:none;">
-<h2>Business Panel</h2>
-<p>Welcome Business 🏢</p>
+<h2>Post Job</h2>
+
+<input type="text" id="title" placeholder="Job Title"><br><br>
+<input type="text" id="location" placeholder="Location"><br><br>
+
+<button onclick="addJob()">Add Job</button>
+
+<h3>All Jobs</h3>
+<div id="jobList2"></div>
+
 <button onclick="logout()">Logout</button>
 </div>
 
 <script>
+
 function login(){
 let user = document.getElementById("user").value;
 
-document.getElementById("login").style.display = "none";
+document.getElementById("login").style.display="none";
 
-if(user == "student"){
-document.getElementById("student").style.display = "block";
+if(user=="student"){
+document.getElementById("student").style.display="block";
+showJobs();
 }else{
-document.getElementById("business").style.display = "block";
+document.getElementById("business").style.display="block";
+showJobsBusiness();
 }
 }
 
 function logout(){
 location.reload();
 }
+
+function addJob(){
+let title = document.getElementById("title").value;
+let location = document.getElementById("location").value;
+
+if(title=="" || location==""){
+alert("Fill all fields");
+return;
+}
+
+let jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+
+jobs.push(title + " - " + location);
+
+localStorage.setItem("jobs", JSON.stringify(jobs));
+
+document.getElementById("title").value="";
+document.getElementById("location").value="";
+
+showJobsBusiness();
+}
+
+function showJobs(){
+let jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+
+let output="";
+jobs.forEach(function(job){
+output += "<div class='card'>" + job + 
+"<br><button onclick='apply()'>Apply</button></div>";
+});
+
+document.getElementById("jobList").innerHTML = output;
+}
+
+function showJobsBusiness(){
+let jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+
+let output="";
+jobs.forEach(function(job, i){
+output += "<div class='card'>" + job + 
+"<br><button onclick='deleteJob("+i+")'>Delete</button></div>";
+});
+
+document.getElementById("jobList2").innerHTML = output;
+}
+
+function apply(){
+alert("Applied!");
+}
+
+function deleteJob(i){
+let jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+
+jobs.splice(i,1);
+
+localStorage.setItem("jobs", JSON.stringify(jobs));
+
+showJobsBusiness();
+}
+
 </script>
 
 </body>
