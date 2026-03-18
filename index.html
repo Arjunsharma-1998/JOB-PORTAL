@@ -1,0 +1,111 @@
+
+<head>
+    <title>Pro Job Portal</title>
+    <style>
+        body { font-family: Arial; background:#f5f5f5; text-align:center; }
+        .container { max-width:600px; margin:auto; }
+        input, select { padding:8px; margin:5px; width:80%; }
+        button { padding:8px 15px; background:blue; color:white; border:none; border-radius:5px; cursor:pointer; margin:5px; }
+        .card { background:white; padding:10px; margin:10px; border-radius:10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+<h1>Job Portal</h1>
+
+<!-- LOGIN -->
+<div id="login">
+<h2>Login</h2>
+<select id="userType">
+<option value="student">Student</option>
+<option value="business">Business</option>
+</select><br>
+<button onclick="login()">Login</button>
+</div>
+
+<!-- STUDENT DASHBOARD -->
+<div id="student" style="display:none;">
+<h2>Find Jobs</h2>
+<div id="jobList"></div>
+<button onclick="logout()">Logout</button>
+</div>
+
+<!-- BUSINESS DASHBOARD -->
+<div id="business" style="display:none;">
+<h2>Post Job</h2>
+<input type="text" id="title" placeholder="Job Title"><br>
+<input type="text" id="location" placeholder="Location"><br>
+<button onclick="addJob()">Add Job</button>
+
+<h3>All Jobs</h3>
+<div id="jobList2"></div>
+<button onclick="logout()">Logout</button>
+</div>
+
+</div>
+
+<script>
+
+function login(){
+    let type = document.getElementById("userType").value;
+    document.getElementById("login").style.display="none";
+
+    if(type=="student"){
+        document.getElementById("student").style.display="block";
+        showJobs();
+    } else {
+        document.getElementById("business").style.display="block";
+        showJobsBusiness();
+    }
+}
+
+function logout(){ location.reload(); }
+
+function addJob(){
+    let title=document.getElementById("title").value;
+    let location=document.getElementById("location").value;
+    if(!title || !location){ alert("Fill all fields"); return; }
+
+    let jobs=JSON.parse(localStorage.getItem("jobs"))||[];
+    jobs.push(title+" - "+location);
+    localStorage.setItem("jobs",JSON.stringify(jobs));
+
+    document.getElementById("title").value="";
+    document.getElementById("location").value="";
+
+    showJobsBusiness();
+}
+
+function showJobs(){
+    let jobs=JSON.parse(localStorage.getItem("jobs"))||[];
+    let output="";
+    jobs.forEach(j=>{
+        output+=<div class='card'>${j}<br><button onclick='apply()'>Apply</button></div>;
+    });
+    document.getElementById("jobList").innerHTML=output;
+}
+
+function showJobsBusiness(){
+    let jobs=JSON.parse(localStorage.getItem("jobs"))||[];
+    let output="";
+    jobs.forEach((j,i)=>{
+        output+=<div class='card'>${j}<br><button onclick='deleteJob(${i})'>Delete</button></div>;
+    });
+    document.getElementById("jobList2").innerHTML=output;
+}
+
+function apply(){ alert("Applied Successfully!"); }
+
+function deleteJob(i){
+    let jobs=JSON.parse(localStorage.getItem("jobs"))||[];
+    jobs.splice(i,1);
+    localStorage.setItem("jobs",JSON.stringify(jobs));
+    showJobsBusiness();
+}
+
+</script>
+
+</body>
+</html>
