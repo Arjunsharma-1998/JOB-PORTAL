@@ -1,135 +1,373 @@
 <!DOCTYPE html>
-<html>
+<html lang="hi">
 <head>
-<title>Job Portal</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>मेरी जॉब पोर्टल</title>
+    
+    <!-- Firebase SDK लोड करें -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    
+    <script>
+        // 🔴 अपना Firebase Config यहाँ डालें
+        const firebaseConfig = {
+            apiKey: "AIzaSyBvhIYy4Wr5cSxNEcfJP_BMeOAG-8GpM9U",
+            authDomain: "meri-job-portal.firebaseapp.com",
+            projectId: "meri-job-portal",
+            storageBucket: "meri-job-portal.firebasestorage.app",
+            messagingSenderId: "168876302117",
+            appId: "1:168876302117:web:61bd7296920b5e0bed04cc",
+            measurementId: "G-WY8D3Q0JVQ"
+        };
 
-<style>
-body { font-family: Arial; text-align: center; background:#f2f2f2; }
-button { padding:8px 15px; margin:5px; }
-.card { background:white; margin:10px; padding:10px; border-radius:8px; }
-</style>
-
+        // Firebase Initialize करें
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+    </script>
+    
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .navbar {
+            background-color: #333;
+            padding: 15px;
+            color: white;
+            text-align: center;
+        }
+        .navbar a {
+            color: white;
+            text-decoration: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            border-radius: 5px;
+        }
+        .navbar a:hover {
+            background-color: #555;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .job-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .hidden {
+            display: none;
+        }
+        .error {
+            color: red;
+            margin-top: 5px;
+        }
+        .success {
+            color: green;
+            margin-top: 5px;
+        }
+    </style>
 </head>
 <body>
+    <!-- नेविगेशन बार -->
+    <div class="navbar">
+        <strong>मेरी जॉब पोर्टल</strong> |
+        <a href="#" onclick="showLogin('student')">स्टूडेंट लॉगिन</a> |
+        <a href="#" onclick="showLogin('business')">बिजनेस लॉगिन</a> |
+        <a href="#" onclick="showAllJobs()">सभी जॉब्स</a> |
+        <a href="#" onclick="showPostJob()">जॉब पोस्ट करें</a> |
+        <a href="#" onclick="logout()">लॉगआउट</a>
+    </div>
 
-<h1>Job Portal</h1>
+    <!-- लॉगिन फॉर्म -->
+    <div id="loginSection" class="container hidden">
+        <h2 id="loginTitle">स्टूडेंट लॉगिन</h2>
+        <div class="form-group">
+            <label>ईमेल:</label>
+            <input type="email" id="email" placeholder="apna@email.com">
+        </div>
+        <div class="form-group">
+            <label>पासवर्ड:</label>
+            <input type="password" id="password" placeholder="********">
+        </div>
+        <button onclick="login()">लॉगिन</button>
+        <button onclick="signup()">साइन अप</button>
+        <p id="userType" class="hidden">student</p>
+        <div id="loginMessage"></div>
+    </div>
 
-<!-- LOGIN -->
-<div id="login">
-<h2>Login</h2>
+    <!-- जॉब पोस्ट फॉर्म -->
+    <div id="postJobSection" class="container hidden">
+        <h2>नई जॉब पोस्ट करें</h2>
+        <div class="form-group">
+            <label>जॉब टाइटल:</label>
+            <input type="text" id="jobTitle" placeholder="जैसे: वेब डेवलपर">
+        </div>
+        <div class="form-group">
+            <label>कंपनी का नाम:</label>
+            <input type="text" id="company" placeholder="जैसे: टेक सॉल्यूशंस">
+        </div>
+        <div class="form-group">
+            <label>लोकेशन:</label>
+            <input type="text" id="location" placeholder="जैसे: मुंबई">
+        </div>
+        <div class="form-group">
+            <label>सैलरी:</label>
+            <input type="text" id="salary" placeholder="जैसे: ₹25,000/महीना">
+        </div>
+        <div class="form-group">
+            <label>जॉब डिस्क्रिप्शन:</label>
+            <textarea id="description" rows="4" placeholder="जॉब की पूरी जानकारी..."></textarea>
+        </div>
+        <button onclick="saveJob()">जॉब सेव करें</button>
+        <div id="postJobMessage"></div>
+    </div>
 
-<select id="user">
-<option value="student">Student</option>
-<option value="business">Business</option>
-</select>
+    <!-- सभी जॉब्स दिखाने के लिए -->
+    <div id="allJobsSection" class="container">
+        <h2>सभी जॉब्स</h2>
+        <div id="jobsList">लोड हो रहा है...</div>
+    </div>
 
-<br><br>
+    <script>
+        // लॉगिन फॉर्म दिखाएँ
+        function showLogin(type) {
+            hideAllSections();
+            document.getElementById('loginSection').classList.remove('hidden');
+            document.getElementById('loginTitle').innerText = type === 'student' ? 'स्टूडेंट लॉगिन' : 'बिजनेस लॉगिन';
+            document.getElementById('userType').innerText = type;
+            document.getElementById('loginMessage').innerHTML = '';
+        }
 
-<button onclick="login()">Login</button>
-</div>
+        // जॉब पोस्ट फॉर्म दिखाएँ
+        function showPostJob() {
+            const user = auth.currentUser;
+            if(!user) {
+                alert('पहले लॉगिन करें!');
+                return;
+            }
+            
+            // चेक करें कि बिजनेस है या नहीं
+            db.collection('users').doc(user.uid).get()
+                .then((doc) => {
+                    if(doc.exists && doc.data().userType === 'business') {
+                        hideAllSections();
+                        document.getElementById('postJobSection').classList.remove('hidden');
+                        document.getElementById('postJobMessage').innerHTML = '';
+                    } else {
+                        alert('सिर्फ बिजनेस अकाउंट ही जॉब पोस्ट कर सकते हैं!');
+                    }
+                })
+                .catch(() => {
+                    alert('कृपया पहले बिजनेस अकाउंट से लॉगिन करें');
+                });
+        }
 
-<!-- STUDENT -->
-<div id="student" style="display:none;">
-<h2>Jobs</h2>
-<div id="jobList"></div>
-<button onclick="logout()">Logout</button>
-</div>
+        // सभी जॉब्स दिखाएँ
+        function showAllJobs() {
+            hideAllSections();
+            document.getElementById('allJobsSection').classList.remove('hidden');
+            loadAllJobs();
+        }
 
-<!-- BUSINESS -->
-<div id="business" style="display:none;">
-<h2>Post Job</h2>
+        // सारे सेक्शन छुपाएँ
+        function hideAllSections() {
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('postJobSection').classList.add('hidden');
+            document.getElementById('allJobsSection').classList.add('hidden');
+        }
 
-<input type="text" id="title" placeholder="Job Title"><br><br>
-<input type="text" id="location" placeholder="Location"><br><br>
+        // साइन अप
+        function signup() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const userType = document.getElementById('userType').innerText;
 
-<button onclick="addJob()">Add Job</button>
+            if(!email || !password) {
+                document.getElementById('loginMessage').innerHTML = '<p class="error">ईमेल और पासवर्ड दोनों डालें!</p>';
+                return;
+            }
 
-<h3>All Jobs</h3>
-<div id="jobList2"></div>
+            auth.createUserWithEmailAndPassword(email, password)
+                .then((userCredential) => {
+                    return db.collection('users').doc(userCredential.user.uid).set({
+                        email: email,
+                        userType: userType,
+                        createdAt: new Date()
+                    });
+                })
+                .then(() => {
+                    document.getElementById('loginMessage').innerHTML = '<p class="success">साइन अप सफल! अब लॉगिन करें</p>';
+                    document.getElementById('email').value = '';
+                    document.getElementById('password').value = '';
+                })
+                .catch((error) => {
+                    document.getElementById('loginMessage').innerHTML = '<p class="error">Error: ' + error.message + '</p>';
+                });
+        }
 
-<button onclick="logout()">Logout</button>
-</div>
+        // लॉगिन
+        function login() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
 
-<script>
+            if(!email || !password) {
+                document.getElementById('loginMessage').innerHTML = '<p class="error">ईमेल और पासवर्ड दोनों डालें!</p>';
+                return;
+            }
 
-function login(){
-let user = document.getElementById("user").value;
+            auth.signInWithEmailAndPassword(email, password)
+                .then(() => {
+                    document.getElementById('loginMessage').innerHTML = '<p class="success">लॉगिन सफल!</p>';
+                    document.getElementById('email').value = '';
+                    document.getElementById('password').value = '';
+                    setTimeout(() => {
+                        document.getElementById('loginSection').classList.add('hidden');
+                    }, 2000);
+                })
+                .catch((error) => {
+                    document.getElementById('loginMessage').innerHTML = '<p class="error">Error: ' + error.message + '</p>';
+                });
+        }
 
-document.getElementById("login").style.display="none";
+        // लॉगआउट
+        function logout() {
+            auth.signOut()
+                .then(() => {
+                    alert('लॉगआउट हो गया');
+                    showAllJobs();
+                });
+        }
 
-if(user=="student"){
-document.getElementById("student").style.display="block";
-showJobs();
-}else{
-document.getElementById("business").style.display="block";
-showJobsBusiness();
-}
-}
+        // जॉब सेव करें
+        function saveJob() {
+            const user = auth.currentUser;
+            if(!user) {
+                alert('पहले लॉगिन करें!');
+                return;
+            }
 
-function logout(){
-location.reload();
-}
+            const title = document.getElementById('jobTitle').value;
+            const company = document.getElementById('company').value;
+            const location = document.getElementById('location').value;
+            const salary = document.getElementById('salary').value;
+            const description = document.getElementById('description').value;
 
-function addJob(){
-let title = document.getElementById("title").value;
-let location = document.getElementById("location").value;
+            if(!title || !company || !location || !salary || !description) {
+                document.getElementById('postJobMessage').innerHTML = '<p class="error">सभी फील्ड भरें!</p>';
+                return;
+            }
 
-if(title=="" || location==""){
-alert("Fill all fields");
-return;
-}
+            const jobData = {
+                title: title,
+                company: company,
+                location: location,
+                salary: salary,
+                description: description,
+                postedBy: user.uid,
+                postedByEmail: user.email,
+                createdAt: new Date()
+            };
 
-let jobs = JSON.parse(localStorage.getItem("jobs")) || [];
+            db.collection('jobs').add(jobData)
+                .then(() => {
+                    document.getElementById('postJobMessage').innerHTML = '<p class="success">जॉब सफलतापूर्वक डाल दी गई!</p>';
+                    document.getElementById('jobTitle').value = '';
+                    document.getElementById('company').value = '';
+                    document.getElementById('location').value = '';
+                    document.getElementById('salary').value = '';
+                    document.getElementById('description').value = '';
+                })
+                .catch((error) => {
+                    document.getElementById('postJobMessage').innerHTML = '<p class="error">Error: ' + error.message + '</p>';
+                });
+        }
 
-jobs.push(title + " - " + location);
+        // सभी जॉब्स लोड करें
+        function loadAllJobs() {
+            const jobsList = document.getElementById('jobsList');
+            jobsList.innerHTML = 'लोड हो रहा है...';
 
-localStorage.setItem("jobs", JSON.stringify(jobs));
+            db.collection('jobs').orderBy('createdAt', 'desc').get()
+                .then((querySnapshot) => {
+                    jobsList.innerHTML = '';
+                    if(querySnapshot.empty) {
+                        jobsList.innerHTML = '<p>अभी कोई जॉब नहीं है।</p>';
+                        return;
+                    }
 
-document.getElementById("title").value="";
-document.getElementById("location").value="";
+                    querySnapshot.forEach((doc) => {
+                        const job = doc.data();
+                        const date = job.createdAt ? new Date(job.createdAt.seconds * 1000).toLocaleDateString('hi-IN') : 'तारीख नहीं';
+                        
+                        const jobCard = `
+                            <div class="job-card">
+                                <h3>${job.title}</h3>
+                                <p><strong>कंपनी:</strong> ${job.company}</p>
+                                <p><strong>लोकेशन:</strong> ${job.location}</p>
+                                <p><strong>सैलरी:</strong> ${job.salary}</p>
+                                <p><strong>डिस्क्रिप्शन:</strong> ${job.description}</p>
+                                <p><small>डाला गया: ${date}</small></p>
+                            </div>
+                        `;
+                        jobsList.innerHTML += jobCard;
+                    });
+                })
+                .catch((error) => {
+                    jobsList.innerHTML = '<p class="error">Error: ' + error.message + '</p>';
+                });
+        }
 
-showJobsBusiness();
-}
+        // लॉगिन स्टेटस चेक करते रहें
+        auth.onAuthStateChanged((user) => {
+            if(user) {
+                console.log('User logged in:', user.email);
+            } else {
+                console.log('User logged out');
+            }
+        });
 
-function showJobs(){
-let jobs = JSON.parse(localStorage.getItem("jobs")) || [];
-
-let output="";
-jobs.forEach(function(job){
-output += "<div class='card'>" + job + 
-"<br><button onclick='apply()'>Apply</button></div>";
-});
-
-document.getElementById("jobList").innerHTML = output;
-}
-
-function showJobsBusiness(){
-let jobs = JSON.parse(localStorage.getItem("jobs")) || [];
-
-let output="";
-jobs.forEach(function(job, i){
-output += "<div class='card'>" + job + 
-"<br><button onclick='deleteJob("+i+")'>Delete</button></div>";
-});
-
-document.getElementById("jobList2").innerHTML = output;
-}
-
-function apply(){
-alert("Applied!");
-}
-
-function deleteJob(i){
-let jobs = JSON.parse(localStorage.getItem("jobs")) || [];
-
-jobs.splice(i,1);
-
-localStorage.setItem("jobs", JSON.stringify(jobs));
-
-showJobsBusiness();
-}
-
-</script>
-
+        // पेज लोड होते ही सभी जॉब्स दिखाएँ
+        window.onload = function() {
+            showAllJobs();
+        };
+    </script>
 </body>
 </html>
